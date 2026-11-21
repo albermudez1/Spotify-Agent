@@ -1,0 +1,830 @@
+{
+  "name": "Spotify_Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -96,
+        144
+      ],
+      "id": "6a8fb3c5-7268-4dd3-8f00-fed124398dec",
+      "name": "Telegram Trigger",
+      "webhookId": "dba4b6c6-b0db-4f3d-be4d-39aef6df043c",
+      "credentials": {
+        "telegramApi": {
+          "id": "kDrA1jBrb3JITJyH",
+          "name": "Telegram account Spoty"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message?.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "af8b75dc-5944-4f94-9581-23a8362bebe1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Texto"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "21a681de-5b0a-40f1-9f6c-7e4d7d788a8d",
+                    "leftValue": "={{ $json.message?.voice || $json.message?.audio }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "object",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        128,
+        144
+      ],
+      "id": "303b64b8-f1e9-485b-9fae-054c36750bc8",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ff8f249c-c155-4e33-acb7-b6c18cbbde6e",
+              "name": "chatInput",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        464,
+        -16
+      ],
+      "id": "d84ec883-257a-46d3-b858-4c4839f322e1",
+      "name": "Edit Fields Tex"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('Telegram Trigger').item.json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        240
+      ],
+      "id": "57436692-8f46-4e90-a951-c6290a092fef",
+      "name": "Get a file Audio",
+      "webhookId": "b5e9243a-25ae-464e-912b-cf1f0fa50482",
+      "credentials": {
+        "telegramApi": {
+          "id": "kDrA1jBrb3JITJyH",
+          "name": "Telegram account Spoty"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.1-flash-lite",
+          "mode": "list",
+          "cachedResultName": "Gemini 3.1 Flash Lite",
+          "cachedResultUrl": ""
+        },
+        "text": "\"Escucha con atención este fragmento de audio. Si reconoces una canción sonando de fondo o al usuario cantando/tarareando una melodía reconocible, responde estrictamente: 'Reproduce [Nombre de la Canción] de [Artista]'. Si el usuario está hablando y pidiendo música o un género específico, transcribe directamente su intención. Sé breve y directo.\"",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        464,
+        336
+      ],
+      "id": "0e9ade3d-177b-43c5-a06c-2241b73feef0",
+      "name": "Analyze audio",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "UvGgY3jkuMhIOGu9",
+          "name": "Google Gemini(PaLM) Api account (profe)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0088b50-097d-42da-ab1d-6e60925385c9",
+              "name": "chatInput",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        624,
+        144
+      ],
+      "id": "b5b88980-626b-4282-95ae-173ccefbd3ff",
+      "name": "Edit Fields Aud"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "Eres un asistente musical inteligente, DJ personal y ejecutor autónomo para Telegram. Tu objetivo es poner a sonar música en Spotify de inmediato y enriquecer la experiencia con datos de Wikipedia, tu base de conocimientos y razonamiento difuso.\n\nREGLAS CRÍTICAS DE COMPORTAMIENTO:\n1. PROHIBICIÓN ABSOLUTA DE REPETIR O PREGUNTAR:\n   - ESTÁ ESTRICTAMENTE PROHIBIDO hacer preguntas al usuario o pedir aclaraciones.\n   - CADA HERRAMIENTA SE EJECUTA MÁXIMO UNA SOLA VEZ. Queda terminantemente prohibido reintentar una herramienta si devuelve vacío o reformular búsquedas.\n   - Ante cualquier ambigüedad, decide de forma autónoma la mejor opción y ejecuta.\n\n2. Secuencia obligatoria de ejecución:\n   - CASO RECOMENDACIÓN EMOCIONAL / LÓGICA DIFUSA:\n     Si el usuario habla de cómo se siente, su cansancio, energía, estado de ánimo o pide una recomendación para una actividad/humor:\n       1. Ejecuta PRIMERO 'FuzzyMusicAdvisor' enviando los parámetros 'energia' (0.0 a 10.0) y 'animo' (0.0 a 10.0) inferidos de su mensaje.\n       2. Con el 'perfil_acustico' y la recomendación devuelta por el motor difuso, ejecuta 'Spotify Search Tool' (type: track) EXACTAMENTE UNA VEZ.\n       3. Toma el primer 'uri' (spotify:track:...) y ejecútalo en 'Spotify Play Tool'.\n       4. Consulta 'Wikipedia' sobre el artista o género.\n\n   - CASO RAG (Peticiones sobre el Hot 100, listas o puestos):\n     Si el usuario menciona el Hot 100, rankings o canciones del documento:\n       1. Ejecuta 'Supabase Vector Store1' EXACTAMENTE UNA VEZ.\n       2. Con el texto obtenido (o eligiendo tú una representativa si no hay match directo), ejecuta 'Spotify Search Tool' (type: track) UNA VEZ.\n       3. Toma el primer 'uri' y ejecútalo en 'Spotify Play Tool'.\n       4. Consulta 'Wikipedia'.\n\n   - CASO REPRODUCCIÓN DIRECTA O GÉNERO:\n     Si el usuario pide una canción específica o género habitual:\n       1. Ejecuta 'Spotify Search Tool' (type: track) EXACTAMENTE UNA VEZ.\n       2. Toma el 'uri' y ejecútalo en 'Spotify Play Tool'.\n       3. Consulta 'Wikipedia'.\n\n   - CASO COLA (\"agrega a la cola\", \"en fila\"):\n       1. Busca con 'Spotify Search Tool' (type: track) UNA SOLA VEZ.\n       2. Pasa el 'uri' a 'Spotify Queue Tool'.\n       3. Consulta 'Wikipedia'.\n\n   - CASO PLAYLIST (\"pon una playlist...\"):\n       1. Busca con 'Spotify Search Tool' (type: playlist) UNA SOLA VEZ.\n       2. Pasa el primer 'uri' a 'Spotify Play Playlist Tool'.\n       3. Consulta 'Wikipedia'.\n\n3. Formato final de salida en Telegram:\n   - Para reproducción directa, playlist o Hot 100:\n     🎵 **Reproduciendo:** [Canción o Playlist] — [Artista o Creador]\n     💡 **Dato curioso:** [Dato conciso de Wikipedia]\n     *(Si provino del Hot 100, agrega una mención breve de su posición según el documento)*\n\n   - Para recomendación difusa:\n     🎵 **Reproduciendo:** [Canción] — [Artista]\n     🧠 **Diagnóstico Difuso:** [BPM objetivo y perfil acústico calculado matemáticamente por el motor]\n     💡 **Dato curioso:** [Dato conciso de Wikipedia]\n\n   - Para elementos en cola:\n     ➕ **Añadido a la cola:** [Canción] — [Artista]\n     💡 **Dato curioso:** [Dato conciso de Wikipedia]"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        976,
+        80
+      ],
+      "id": "09eaeef1-c30d-4a5b-b2c2-1bd838688055",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        688,
+        336
+      ],
+      "id": "8b51a80f-add8-45bd-b326-868ff1025a77",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "memory",
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        848,
+        304
+      ],
+      "id": "ba416c8c-5ac0-49ca-b131-e335dff27400",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        976,
+        304
+      ],
+      "id": "896ac77d-1f57-4fdc-ae6b-74b09f00617b",
+      "name": "Wikipedia"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Busca una canción en Spotify. Recibe el nombre del tema y artista, y devuelve información de la pista incluyendo su 'uri'.",
+        "url": "https://api.spotify.com/v1/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters0_Value', `Nombre de la canción y artista a buscar.`, 'string') }}"
+            },
+            {
+              "name": "type",
+              "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('parameters1_Value', `Tipo de búsqueda: 'track' para canciones sueltas o 'playlist' para listas de reproducción.`, 'string') }}"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        1360,
+        272
+      ],
+      "id": "332079f6-cbe1-4018-830d-f327196d657d",
+      "name": "Spotify Search Tool",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "FMTnY8fSmEpuIjUA",
+          "name": "Spotify"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Reproduce una canción en Spotify utilizando su identificador 'uri'. Recibe el URI de la pista (ejemplo: spotify:track:4cOdK2wGLETKBW3PvgPWqT).",
+        "method": "PUT",
+        "url": "https://api.spotify.com/v1/me/player/play",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"uris\": [\"{{ $fromAI('track_uri', 'URI de Spotify de la pista obtenido en la búsqueda') }}\"]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        1296,
+        464
+      ],
+      "id": "09605189-a3e3-41b0-8a8a-f70e3b3acbce",
+      "name": "Spotify Play Tool",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "FMTnY8fSmEpuIjUA",
+          "name": "Spotify"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1344,
+        -48
+      ],
+      "id": "6cf1756a-dc4b-4fb1-a22c-f99180128bda",
+      "name": "Send a text message",
+      "webhookId": "a19d445b-7285-4f6e-a46f-3d1b4c160231",
+      "credentials": {
+        "telegramApi": {
+          "id": "kDrA1jBrb3JITJyH",
+          "name": "Telegram account Spoty"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Añade una pista musical a la cola de reproducción de Spotify sin interrumpir la canción actual. Recibe el 'uri' del track.",
+        "method": "POST",
+        "url": "https://api.spotify.com/v1/me/player/queue",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "uri",
+              "value": "={{ $fromAI('track_uri', 'URI de Spotify de la cancion (spotify:track:...)') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        1472,
+        464
+      ],
+      "id": "7cd16153-8905-486d-add6-c5744c6ebab8",
+      "name": "Spotify Queue Tool",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "FMTnY8fSmEpuIjUA",
+          "name": "Spotify"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Inicia la reproducción de una playlist completa en Spotify usando su identificador 'context_uri'.",
+        "method": "PUT",
+        "url": "https://api.spotify.com/v1/me/player/play",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"context_uri\": \"{{ $fromAI('playlist_uri', 'URI de la playlist obtenido de la busqueda (spotify:playlist:...)') }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        1168,
+        384
+      ],
+      "id": "008e4992-94ed-4438-a5e2-8cffb203bd4f",
+      "name": "Spotify Play Playlist Tool",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "FMTnY8fSmEpuIjUA",
+          "name": "Spotify"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        272,
+        608
+      ],
+      "id": "517ced7d-7a54-418d-9e77-e34f54404fb5",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1Qs8O2e1iq1MuubpY-wCwWftw3j4SeBup",
+          "mode": "list",
+          "cachedResultName": "Hot 100.pdf",
+          "cachedResultUrl": "https://drive.google.com/file/d/1Qs8O2e1iq1MuubpY-wCwWftw3j4SeBup/view?usp=drivesdk"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        496,
+        608
+      ],
+      "id": "2376a320-ac31-4fe3-a265-d8a64304526a",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "vrC5BEItk0jxtOkt",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "spotify",
+          "mode": "list",
+          "cachedResultName": "spotify"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        720,
+        608
+      ],
+      "id": "eb8aaa57-104f-4760-a83e-a0c8299afcb4",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "cKS761OkUDO1M33n",
+          "name": "Supabase account (spoty)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "dimensions": 1536,
+          "stripNewLines": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        816
+      ],
+      "id": "e013ce23-d983-46ff-bb96-dd15a517501b",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "gL5Mvv5nNR6HI7tN",
+          "name": "OpenAI account (profe)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        864,
+        816
+      ],
+      "id": "78bbf172-e393-4ee6-9064-aa78805b2a1b",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Base de conocimiento vectorial con el listado oficial de las 100 mejores canciones del Billboard Hot 100. Úsala para responder preguntas sobre puestos, posiciones, artistas y canciones del Hot 100.",
+        "tableName": {
+          "__rl": true,
+          "value": "spotify",
+          "mode": "list",
+          "cachedResultName": "spotify"
+        },
+        "options": {
+          "queryName": "match_spotify"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1584,
+        208
+      ],
+      "id": "a083aebc-e768-4d52-b44c-2d7efbc12a56",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "cKS761OkUDO1M33n",
+          "name": "Supabase account (spoty)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1680,
+        416
+      ],
+      "id": "56f9d43b-50db-4bf3-b689-36b2d2c44961",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "gL5Mvv5nNR6HI7tN",
+          "name": "OpenAI account (profe)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Motor de inferencia de lógica difusa que calcula matemáticamente el perfil musical óptimo (BPM objetivo, nivel de distorsión y género recomendado) según el nivel de energía (0 a 10) y estado de ánimo (0 a 10) del usuario. Úsala siempre que el usuario exprese cómo se siente o pida una recomendación según su estado de ánimo/actividad.",
+        "jsCode": "// 1. Obtener entradas desde los argumentos pasados por la IA\nconst energia = typeof $json.energia !== 'undefined' ? parseFloat($json.energia) : 5.0;\nconst animo = typeof $json.animo !== 'undefined' ? parseFloat($json.animo) : 5.0;\n\n// 2. Funciones de Pertenencia Triangulares (Fuzzificación)\nfunction trimf(x, a, b, c) {\n  if (x <= a || x >= c) return 0;\n  if (x === b) return 1;\n  if (x > a && x < b) return (x - a) / (b - a);\n  if (x > b && x < c) return (c - x) / (c - b);\n  return 0;\n}\n\n// Grados de pertenencia para ENERGÍA (0 a 10)\nconst mu_energia_baja  = trimf(energia, -1, 0, 5);\nconst mu_energia_media = trimf(energia, 2, 5, 8);\nconst mu_energia_alta  = trimf(energia, 5, 10, 11);\n\n// Grados de pertenencia para ÁNIMO (0 a 10)\nconst mu_animo_bajo  = trimf(animo, -1, 0, 5);\nconst mu_animo_medio = trimf(animo, 2, 5, 8);\nconst mu_animo_alto  = trimf(animo, 5, 10, 11);\n\n// 3. Base de Reglas Difusas (Inferencia T-Norma / MIN)\n// Cada regla define un peso (disparo) y un BPM objetivo (Consecuente)\nconst reglas = [\n  // R1: Energía Baja + Ánimo Bajo -> Muy calmado / Melancólico (BPM ~ 65)\n  { peso: Math.min(mu_energia_baja, mu_animo_bajo), bpm: 65, perfil: \"Lo-Fi / Slow Blues / Ambient acústico\" },\n  \n  // R2: Energía Baja + Ánimo Alto -> Acústico relajado / Chill pop (BPM ~ 85)\n  { peso: Math.min(mu_energia_baja, mu_animo_alto), bpm: 85, perfil: \"Bossa Nova / Indie Acústico / Reggae suave\" },\n\n  // R3: Energía Media + Ánimo Bajo -> Rock reflexivo / Baladas lentas (BPM ~ 95)\n  { peso: Math.min(mu_energia_media, mu_animo_bajo), bpm: 95, perfil: \"Grunge acústico / Shoegaze / Post-Rock\" },\n\n  // R4: Energía Media + Ánimo Medio/Alto -> Ritmo equilibrado / Groove (BPM ~ 115)\n  { peso: Math.min(mu_energia_media, Math.max(mu_animo_medio, mu_animo_alto)), bpm: 115, perfil: \"Classic Rock / Funk / Synthpop\" },\n\n  // R5: Energía Alta + Ánimo Bajo -> Descarga / Catarsis (BPM ~ 140)\n  { peso: Math.min(mu_energia_alta, mu_animo_bajo), bpm: 140, perfil: \"Heavy Metal / Hard Rock / Punk\" },\n\n  // R6: Energía Alta + Ánimo Alto -> Máxima euforia / Fiesta / Cardio (BPM ~ 160)\n  { peso: Math.min(mu_energia_alta, mu_animo_alto), bpm: 160, perfil: \"Power Metal / Speed Metal / Drum & Bass / Hard Dance\" }\n];\n\n// 4. Defuzzificación (Centro de Gravedad Ponderado / Sugeno)\nlet numerador = 0;\nlet denominador = 0;\nlet mejorPerfil = \"Rock / Alternativo\";\nlet maxPeso = -1;\n\nfor (const r of reglas) {\n  numerador += r.peso * r.bpm;\n  denominador += r.peso;\n  if (r.peso > maxPeso) {\n    maxPeso = r.peso;\n    mejorPerfil = r.perfil;\n  }\n}\n\nconst bpmFinal = denominador > 0 ? Math.round(numerador / denominador) : 110;\n\n// 5. Retornar perfil nítido (Crisp Output)\n// 5. Retornar como texto estructurado (String)\nreturn `BPM Objetivo: ${bpmFinal}. Perfil acústico: ${mejorPerfil}. Diagnóstico: Evaluado con Energía ${energia}/10 y Ánimo ${animo}/10. Pertenencia difusa calculó un BPM de ${bpmFinal}. Recomendación de búsqueda: ${mejorPerfil} con tempo cercano a ${bpmFinal} BPM.`;",
+        "specifyInputSchema": true,
+        "jsonSchemaExample": "{\n  \"energia\": 5.0,\n  \"animo\": 5.0\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "typeVersion": 1.3,
+      "position": [
+        1008,
+        496
+      ],
+      "id": "1abd7c2e-050b-49ae-8e45-26a6263b306f",
+      "name": "FuzzyMusicAdvisor"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields Tex",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file Audio": {
+      "main": [
+        [
+          {
+            "node": "Analyze audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze audio": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields Aud",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields Tex": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields Aud": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spotify Search Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spotify Play Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spotify Queue Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spotify Play Playlist Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FuzzyMusicAdvisor": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e1b197fe-2d4f-4610-a4e1-460534910ae3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "32a5454ed59d99c40aa9a8b432f880a3f27f5176efae6b17e0abc478c5af53f7"
+  },
+  "nodeGroups": [],
+  "id": "hH3GiDfrlu4AVUHR",
+  "tags": []
+}

@@ -1,0 +1,38 @@
+-- 1. Habilitar la extensión pgvector
+create extension if not exists vector;
+
+-- 2. Crear la tabla dedicada 'spotify'
+create table if not exists spotify (
+  id bigserial primary key,
+  content text,
+  metadata jsonb,
+  embedding vector(1536)
+);
+
+-- 3. Crear la función de búsqueda para la tabla 'spotify'
+create or replace function match_spotify (
+  query_embedding vector(1536),
+  match_count int default null,
+  filter jsonb default '{}'
+) returns table (
+  id bigint,
+  content text,
+  metadata jsonb,
+  similarity float
+)
+language plpgsql
+as $$
+#variable_conflict use_column
+begin
+  return query
+  select
+    id,
+    content,
+    metadata,
+    1 - (spotify.embedding <=> query_embedding) as similarity
+  from spotify
+  where metadata @> filter
+  order by spotify.embedding <=> query_embedding
+  limit match_count;
+end;
+$$;
